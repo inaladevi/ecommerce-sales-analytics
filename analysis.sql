@@ -4,15 +4,25 @@
 
 -- monthly revenue and order trends
 
-SELECT 
-    DATE_TRUNC('month', invoice_date) AS month,
+WITH order_totals AS (
+    SELECT
+        invoice_no,
+        DATE_TRUNC('month', invoice_date) AS month,
+        customer_id,
+        SUM(quantity * unit_price) AS order_value
+    FROM transactions
+    WHERE quantity > 0
+      AND unit_price > 0
+    GROUP BY invoice_no, DATE_TRUNC('month', invoice_date), customer_id
+)
+SELECT
+    month,
     COUNT(DISTINCT invoice_no) AS total_orders,
     COUNT(DISTINCT customer_id) AS unique_customers,
-    SUM(quantity * unit_price) AS total_revenue,
-    ROUND(AVG(quantity * unit_price), 2) AS avg_order_value
-FROM transactions
-WHERE quantity > 0 AND unit_price > 0
-GROUP BY DATE_TRUNC('month', invoice_date)
+    ROUND(SUM(order_value), 2) AS total_revenue,
+    ROUND(AVG(order_value), 2) AS avg_order_value
+FROM order_totals
+GROUP BY month
 ORDER BY month;
 
 -- top 10 products by revenue
@@ -31,32 +41,49 @@ LIMIT 10;
 
 -- top 10 customers by total spend
 
+WITH order_totals AS (
+    SELECT
+        customer_id,
+        invoice_no,
+        invoice_date,
+        SUM(quantity * unit_price) AS order_value
+    FROM transactions
+    WHERE quantity > 0 
+      AND unit_price > 0 
+      AND customer_id IS NOT NULL
+      AND customer_id != ''
+    GROUP BY customer_id, invoice_no, invoice_date
+)
 SELECT 
     customer_id,
     COUNT(DISTINCT invoice_no) AS total_orders,
-    SUM(quantity * unit_price) AS total_spent,
-    ROUND(AVG(quantity * unit_price), 2) AS avg_order_value,
+    ROUND(SUM(order_value), 2) AS total_spent,
+    ROUND(AVG(order_value), 2) AS avg_order_value,
     MIN(invoice_date) AS first_purchase,
     MAX(invoice_date) AS last_purchase
-FROM transactions
-WHERE quantity > 0 
-    AND unit_price > 0 
-    AND customer_id IS NOT NULL
-    AND customer_id != ''
+FROM order_totals
 GROUP BY customer_id
 ORDER BY total_spent DESC
 LIMIT 10;
 
 -- revenue by country
 
+WITH order_totals AS (
+    SELECT
+        country,
+        invoice_no,
+        SUM(quantity * unit_price) AS order_value
+    FROM transactions
+    WHERE quantity > 0
+      AND unit_price > 0
+    GROUP BY country, invoice_no
+)
 SELECT 
     country,
-    COUNT(DISTINCT customer_id) AS unique_customers,
     COUNT(DISTINCT invoice_no) AS total_orders,
-    SUM(quantity * unit_price) AS total_revenue,
-    ROUND(AVG(quantity * unit_price), 2) AS avg_order_value
-FROM transactions
-WHERE quantity > 0 AND unit_price > 0
+    ROUND(SUM(order_value), 2) AS total_revenue,
+    ROUND(AVG(order_value), 2) AS avg_order_value
+FROM order_totals
 GROUP BY country
 ORDER BY total_revenue DESC
 LIMIT 10;
@@ -69,16 +96,31 @@ WITH monthly_revenue AS (
         country,
         SUM(quantity * unit_price) AS revenue
     FROM transactions
-    WHERE quantity > 0 AND unit_price > 0
+    WHERE quantity > 0 
+      AND unit_price > 0
     GROUP BY DATE_TRUNC('month', invoice_date), country
+),
+ranked_countries AS (
+    SELECT 
+        month,
+        country,
+        revenue,
+        RANK() OVER (
+            PARTITION BY month 
+            ORDER BY revenue DESC
+        ) AS country_rank,
+        SUM(revenue) OVER (
+            PARTITION BY month
+        ) AS monthly_total
+    FROM monthly_revenue
 )
 SELECT 
     month,
     country,
-    revenue,
-    RANK() OVER (PARTITION BY month ORDER BY revenue DESC) AS country_rank,
-    ROUND(revenue / SUM(revenue) OVER (PARTITION BY month) * 100, 2) AS revenue_percentage
-FROM monthly_revenue
+    ROUND(revenue, 2) AS revenue,
+    country_rank,
+    ROUND(revenue / monthly_total * 100, 2) AS revenue_percentage
+FROM ranked_countries
 WHERE country_rank <= 5
 ORDER BY month, country_rank;
 

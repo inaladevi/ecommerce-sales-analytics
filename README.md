@@ -1,32 +1,48 @@
 # E-Commerce Sales & Customer Analytics
 
-SQL analysis of a UK-based online retailer's transaction data from 2010-2011.
+SQL analysis of a UK-based online retailer's transaction data from 2010–2011 using PostgreSQL.
 
 ## Dataset
-- Source: [UCI Machine Learning Repository via Kaggle](https://www.kaggle.com/datasets/carrie1/ecommerce-data)
-- 541,909 transactions across 38 countries
-- Fields: InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country
+
+- **Source:** [UCI Machine Learning Repository via Kaggle](https://www.kaggle.com/datasets/carrie1/ecommerce-data)
+- **Records:** 541,909 transactions
+- **Countries:** 38
+- **Time period:** 2010–2011
+- **Fields:** InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country
 
 ## What's in this analysis
 
-- **Revenue trends** — monthly revenue, order volume, and average order value over time
-- **Top products** — best performing products by revenue and units sold
-- **Customer behavior** — top customers by spend, order frequency, and purchase history
-- **Regional analysis** — revenue breakdown by country
-- **Window functions** — monthly country rankings using RANK() and revenue percentage share
-- **Data validation** — detecting cancellations, missing customer IDs, and anomalous invoices
-- **Customer segmentation** — classifying customers into High, Medium, and Low value segments using CTEs
+- **Revenue trends** — monthly revenue, order volume, unique customers, and average order value
+- **Product performance** — top products by revenue, units sold, and order frequency
+- **Customer behavior** — top customers by total spend, order frequency, average order value, and purchase history
+- **Regional analysis** — revenue, order volume, and average order value by country
+- **Window functions** — monthly country rankings using `RANK()` and revenue percentage share
+- **Data quality** — analyzing returns, missing customer IDs, and high-volume invoices
+- **Customer segmentation** — classifying customers into High, Medium, and Low Value segments using CTEs
 
-## Key findings
-- Revenue grew from £823k in Dec 2010 to £1.5M in Nov 2011
-- UK accounts for the majority of revenue across all months
-- 24.9% of transactions have missing customer IDs
-- Top customer (ID 14646) spent over £280k across 73 orders
+## Key Findings
+
+- Revenue grew from approximately **£823K in December 2010 to £1.5M in November 2011**
+- The **UK accounts for the majority of revenue** across the analyzed period
+- Approximately **24.9% of transactions have missing customer IDs**, limiting customer-level analysis
+- Top customer **14646** spent over **£280K across 73 orders**
+
+## SQL Techniques Demonstrated
+
+- Aggregations: `SUM()`, `AVG()`, `COUNT()`, `COUNT(DISTINCT)`
+- Date analysis: `DATE_TRUNC()`
+- Common Table Expressions (CTEs)
+- Window functions: `RANK()`, `SUM() OVER()`
+- Conditional logic: `CASE`
+- Data-quality checks
+- Customer segmentation
+- PostgreSQL-specific data loading with `\COPY`
 
 ## Setup
 
+### Create the table
+
 ```sql
--- create table
 CREATE TABLE transactions (
     invoice_no VARCHAR(20),
     stock_code VARCHAR(20),
