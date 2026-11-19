@@ -40,7 +40,10 @@ SQL analysis of a UK-based online retailer's transaction data from 2010–2011 u
 
 ## Setup
 
-### Create the table
+### 1. Download the dataset
+Download `data.csv` from the [Kaggle dataset page](https://www.kaggle.com/datasets/carrie1/ecommerce-data) and place it in the root folder of this repository.
+
+### 2. Create the table and load data
 
 ```sql
 CREATE TABLE transactions (
@@ -58,7 +61,7 @@ CREATE TABLE transactions (
 \COPY transactions FROM 'data.csv' CSV HEADER ENCODING 'LATIN1';
 
 -- run analysis
-\i analysis.sql
+\(\i\) analysis.sql
 ```
 
 ## Tools
